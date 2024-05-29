@@ -4,7 +4,19 @@
  */
 package posapplication;
 
+import java.awt.Font;
+import static java.awt.PageAttributes.MediaType.D;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 /**
  *
@@ -17,6 +29,15 @@ public class POSApplication extends javax.swing.JFrame {
      */
     public POSApplication() {
         initComponents();
+        tanggal();
+    }
+    
+    public void tanggal(){
+        Date d = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        
+        String dd= sdf.format(d);
+        tgl.setText(dd);
     }
     
     public void totalHargaBarang(){
@@ -31,6 +52,19 @@ public class POSApplication extends javax.swing.JFrame {
       }else{
           TotalHB.setText("");
       }      
+    }
+    
+    private void updateTotalHarga() {
+        int rowCount= tabel.getRowCount();
+        int totalHarga = 0;
+
+        for (int i=0; i < rowCount; i++){
+            String totalSementaraS = tabel.getValueAt(i, 3).toString().replaceAll("Rp.", "").trim();
+            int totalSementara = Integer.parseInt(totalSementaraS);
+            totalHarga += totalSementara;
+        }
+
+        TotalHarga.setText("Rp. " + totalHarga);
     }
 
     /**
@@ -61,7 +95,7 @@ public class POSApplication extends javax.swing.JFrame {
         jLabel7 = new javax.swing.JLabel();
         tgl = new javax.swing.JTextField();
         jLabel8 = new javax.swing.JLabel();
-        jComboBox1 = new javax.swing.JComboBox<>();
+        pembayaran = new javax.swing.JComboBox<>();
         jLabel9 = new javax.swing.JLabel();
         TotalHarga = new javax.swing.JTextField();
         jLabel10 = new javax.swing.JLabel();
@@ -70,6 +104,7 @@ public class POSApplication extends javax.swing.JFrame {
         Bayar = new javax.swing.JTextField();
         btnBayar = new javax.swing.JButton();
         btnCetak = new javax.swing.JButton();
+        clear = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -77,7 +112,7 @@ public class POSApplication extends javax.swing.JFrame {
 
         jLabel1.setFont(new java.awt.Font("Segoe UI Black", 1, 24)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setText("TOKO BARANG");
+        jLabel1.setText("GALERI PENSIL");
 
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setText("Jl. Nama Jalan No.1, Kecamatan, Kabupaten");
@@ -159,6 +194,11 @@ public class POSApplication extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        tabel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tabelMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(tabel);
         if (tabel.getColumnModel().getColumnCount() > 0) {
             tabel.getColumnModel().getColumn(0).setResizable(false);
@@ -178,13 +218,25 @@ public class POSApplication extends javax.swing.JFrame {
         btnEdit.setBackground(new java.awt.Color(0, 204, 204));
         btnEdit.setForeground(new java.awt.Color(255, 255, 255));
         btnEdit.setText("EDIT");
+        btnEdit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEditActionPerformed(evt);
+            }
+        });
 
         btnHapus.setBackground(new java.awt.Color(0, 204, 204));
         btnHapus.setForeground(new java.awt.Color(255, 255, 255));
         btnHapus.setText("HAPUS");
+        btnHapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusActionPerformed(evt);
+            }
+        });
 
         jLabel7.setText("Tanggal");
 
+        tgl.setEditable(false);
+        tgl.setBackground(new java.awt.Color(255, 255, 255));
         tgl.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 tglActionPerformed(evt);
@@ -193,10 +245,10 @@ public class POSApplication extends javax.swing.JFrame {
 
         jLabel8.setText("Pembayaran");
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+        pembayaran.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Cash", "E-Wallet", "Qris", "Kartu Kredit" }));
+        pembayaran.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jComboBox1ActionPerformed(evt);
+                pembayaranActionPerformed(evt);
             }
         });
 
@@ -240,6 +292,15 @@ public class POSApplication extends javax.swing.JFrame {
             }
         });
 
+        clear.setBackground(new java.awt.Color(0, 204, 204));
+        clear.setForeground(new java.awt.Color(255, 255, 255));
+        clear.setText("CLEAR");
+        clear.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clearActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -279,7 +340,7 @@ public class POSApplication extends javax.swing.JFrame {
                                 .addGap(42, 42, 42)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(tgl)
-                                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                    .addComponent(pembayaran, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)))
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 745, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGroup(layout.createSequentialGroup()
@@ -300,9 +361,10 @@ public class POSApplication extends javax.swing.JFrame {
                                         .addComponent(TotalHB)))))
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(btnHapus, javax.swing.GroupLayout.DEFAULT_SIZE, 96, Short.MAX_VALUE)
                             .addComponent(btnEdit, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btnTambah, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(btnHapus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(btnTambah, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(clear, javax.swing.GroupLayout.DEFAULT_SIZE, 96, Short.MAX_VALUE))
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
@@ -324,12 +386,14 @@ public class POSApplication extends javax.swing.JFrame {
                 .addGap(36, 36, 36)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(btnTambah, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(28, 28, 28)
-                        .addComponent(btnEdit, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(39, 39, 39)
-                        .addComponent(btnHapus, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                        .addComponent(btnTambah, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnEdit, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnHapus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(18, 18, 18)
+                        .addComponent(clear, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 223, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -347,7 +411,7 @@ public class POSApplication extends javax.swing.JFrame {
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel8)
-                            .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addComponent(pembayaran, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel11)
@@ -399,15 +463,12 @@ public class POSApplication extends javax.swing.JFrame {
         NamaBarang.setText("");
         HargaBarang.setText("");
         jumlah.setValue(0);
+        totalHargaBarang();
     }//GEN-LAST:event_btnTambahActionPerformed
 
-    private void tglActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tglActionPerformed
+    private void pembayaranActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pembayaranActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_tglActionPerformed
-
-    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jComboBox1ActionPerformed
+    }//GEN-LAST:event_pembayaranActionPerformed
 
     private void KembalianActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_KembalianActionPerformed
         // TODO add your handling code here:
@@ -419,10 +480,117 @@ public class POSApplication extends javax.swing.JFrame {
 
     private void btnBayarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBayarActionPerformed
         // TODO add your handling code here:
+        int totalHarga = Integer.parseInt(TotalHarga.getText().substring(4));
+        int totalBayar = Integer.parseInt(Bayar.getText());
+        int kembalian = totalBayar - totalHarga;
+        Kembalian.setText("Rp. " + kembalian);
+        
     }//GEN-LAST:event_btnBayarActionPerformed
 
     private void btnCetakActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCetakActionPerformed
         // TODO add your handling code here:
+        try{
+            PDDocument document = new PDDocument();
+            PDPage page = new PDPage();
+            document.addPage(page);
+            
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+            PDType0Font font = PDType0Font.load(document, new File("D:/Download/Helvetica-Font-Family2/Helvetica.ttf"));
+            
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 16);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(20, 700);
+            contentStream.showText("                              Nota Pembayaran Toko Galeri Pensil");
+            contentStream.endText();
+            
+            int startX = 20;
+            int startY = 660;
+            int rowHeight = 20;
+            int tableWidth = 500;
+            int tableHeight = rowHeight * (tabel.getRowCount());
+            int colWidth = tableWidth / 4;
+            
+            contentStream.setNonStrokingColor(255, 0, 0);
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(startX, startY);
+            contentStream.showText("Nama Barang");
+            contentStream.newLineAtOffset(colWidth, 0);
+            contentStream.showText("Harga Barang");
+            contentStream.newLineAtOffset(colWidth, 0);
+            contentStream.showText("Jumlah");
+            contentStream.newLineAtOffset(colWidth, 0);
+            contentStream.showText("Total Harga Barang");
+            contentStream.endText();
+            
+            contentStream.setNonStrokingColor(0, 0, 0);
+            contentStream.setFont(PDType1Font.HELVETICA, 12);
+            for (int i=0; i<tabel.getRowCount(); i++){
+                contentStream.beginText();
+                contentStream.newLineAtOffset(startX, startY - (i+1) * rowHeight);
+                contentStream.showText(tabel.getValueAt(i, 0).toString());
+                contentStream.newLineAtOffset(colWidth, 0);
+                contentStream.showText(tabel.getValueAt(i, 1).toString());
+                contentStream.newLineAtOffset(colWidth, 0);
+                contentStream.showText(tabel.getValueAt(i, 2).toString());
+                contentStream.newLineAtOffset(colWidth, 0);
+                contentStream.showText(tabel.getValueAt(i, 3).toString());
+                contentStream.endText();
+            }
+            contentStream.setNonStrokingColor(255, 0, 0);
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(startX, startY - (tabel.getRowCount() + 1) * rowHeight);
+            contentStream.showText("--------------------------------------------------------------------"
+                    +"-----------------------------------------------------");
+            contentStream.newLine();
+            contentStream.endText();
+            contentStream.setNonStrokingColor(0,0,0);
+            
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(startX, startY - (tabel.getRowCount() + 2) * rowHeight);
+            contentStream.showText("Tanggal Transaksi      : "+tgl.getText());
+            contentStream.newLine();
+            contentStream.endText();
+            
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(startX, startY - (tabel.getRowCount() + 3) * rowHeight);
+            contentStream.showText("Total Harga                  : "+TotalHarga.getText());
+            contentStream.newLine();
+            contentStream.endText();
+            
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(startX, startY - (tabel.getRowCount() + 4) * rowHeight);
+            contentStream.showText("Bayar                            : "+Bayar.getText());
+            contentStream.newLine();
+            contentStream.endText();
+            
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(startX, startY - (tabel.getRowCount() + 5) * rowHeight);
+            contentStream.showText("Kembalian                    : "+Kembalian.getText());
+            contentStream.newLine();
+            contentStream.endText();
+            
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(startX, startY - (tabel.getRowCount() + 6) * rowHeight);
+            contentStream.showText("Metode Pembayaran   : "+pembayaran.getSelectedItem());
+            contentStream.newLine();
+            contentStream.endText();
+            
+            contentStream.close();
+            document.save("D:/Nota Pembayaran/nota.pdf");
+            document.close();
+            
+            JOptionPane.showMessageDialog(this, "Nota berhasil dibuat!", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+        }catch(IOException e){
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Terjadi kesalahan saat membuat nota!", "Kesalahan", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnCetakActionPerformed
 
     private void jumlahStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jumlahStateChanged
@@ -432,6 +600,77 @@ public class POSApplication extends javax.swing.JFrame {
     private void TotalHargaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TotalHargaActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_TotalHargaActionPerformed
+
+    private void tglActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tglActionPerformed
+        // TODO add your handling code here:
+        tanggal();
+    }//GEN-LAST:event_tglActionPerformed
+
+    private void btnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditActionPerformed
+        // TODO add your handling code here:
+        int row = tabel.getSelectedRow();
+
+        tabel.setValueAt(NamaBarang.getText(), row, 0);
+
+        String hargaBarangString = HargaBarang.getText().replaceAll("Rp.", "").trim();
+        int hargaBarang = Integer.parseInt(hargaBarangString);
+        tabel.setValueAt("Rp."+hargaBarang, row, 1);
+
+        tabel.setValueAt(jumlah.getValue(), row, 2);
+        
+        int jml = Integer.parseInt(jumlah.getValue().toString());
+        int totalHB = jml * hargaBarang;
+
+        tabel.setValueAt("Rp." + totalHB, row, 3);
+
+        updateTotalHarga();
+
+        NamaBarang.setText("");
+        HargaBarang.setText("");
+        jumlah.setValue(0);
+        totalHargaBarang();
+    }//GEN-LAST:event_btnEditActionPerformed
+
+    private void tabelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tabelMouseClicked
+        // TODO add your handling code here:
+        int row = tabel.getSelectedRow();
+        String namaBarang = tabel.getValueAt(row, 0).toString();
+        String hargaBarang = tabel.getValueAt(row, 1).toString().replaceAll("Rp.", "").trim();
+        String jml = tabel.getValueAt(row, 2).toString();
+        int j = Integer.parseInt(jml);
+        int h = Integer.parseInt(hargaBarang);
+        NamaBarang.setText(namaBarang);
+        HargaBarang.setText(hargaBarang);
+        jumlah.setValue(j);
+    }//GEN-LAST:event_tabelMouseClicked
+
+    private void clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearActionPerformed
+        // TODO add your handling code here:
+        NamaBarang.setText("");
+        HargaBarang.setText("");
+        jumlah.setValue(0);
+        totalHargaBarang();
+    }//GEN-LAST:event_clearActionPerformed
+
+    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        // TODO add your handling code here:
+        int row = tabel.getSelectedRow();
+
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih data yang ingin dihapus.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        DefaultTableModel tbl = (DefaultTableModel) tabel.getModel();
+        tbl.removeRow(row);
+
+        updateTotalHarga();
+
+        NamaBarang.setText("");
+        HargaBarang.setText("");
+        jumlah.setValue(0);
+        totalHargaBarang();
+    }//GEN-LAST:event_btnHapusActionPerformed
 
     /**
      * @param args the command line arguments
@@ -480,7 +719,7 @@ public class POSApplication extends javax.swing.JFrame {
     private javax.swing.JButton btnEdit;
     private javax.swing.JButton btnHapus;
     private javax.swing.JButton btnTambah;
-    private javax.swing.JComboBox<String> jComboBox1;
+    private javax.swing.JButton clear;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -495,6 +734,7 @@ public class POSApplication extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSpinner jumlah;
+    private javax.swing.JComboBox<String> pembayaran;
     private javax.swing.JTable tabel;
     private javax.swing.JTextField tgl;
     // End of variables declaration//GEN-END:variables
